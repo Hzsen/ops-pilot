@@ -16,4 +16,4 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: python -m pytest
       - run: python -m opspilot.evaluation eval/cases.json
-
+      - run: python -m opspilot.market_data.evaluation eval/market_data_cases.json

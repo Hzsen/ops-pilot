@@ -4,16 +4,16 @@ Evidence-grounded incident triage and human-approved runbook automation for mark
 
 ## Project status
 
-OpsPilot currently contains a tested, deterministic vertical slice for generic service incidents. The market-data specialization described below is the next product direction; it is not implemented yet.
+OpsPilot contains a tested, deterministic vertical slice for generic service incidents and a first market-data framework slice built on a versioned synthetic fixture. The framework can inject and diagnose five data-quality faults, but it does not connect to a live provider, persist state, or execute recovery actions.
 
 | Area | Current state | Planned state |
 | --- | --- | --- |
-| API | FastAPI incident, triage, and approval endpoints | Async jobs, replay endpoints, and incident timelines |
-| Reasoning | Deterministic rules with cited evidence | Tool-driven LLM synthesis over the same evidence boundary |
+| API | FastAPI incident endpoints plus stateless fixture-based market-data triage | Async jobs, persisted replay endpoints, and incident timelines |
+| Reasoning | Deterministic generic and market-data tools with cited evidence | Tool-driven LLM synthesis over the same evidence boundary |
 | Storage | In-memory repository | PostgreSQL plus object storage for replay artifacts |
-| Domain | Generic logs and service metrics | Prices, volumes, calendars, corporate actions, and feature partitions |
-| Safety | Every proposed action requires approval; no executor | Typed tool permissions, dry runs, idempotency, and audited execution |
-| Evaluation | Eight offline routing and citation cases | Fault injection, recovery, latency, cost, and policy-violation suites |
+| Domain | Typed daily bars, fixture sessions, corporate actions, and partition checks | Real provider adapters, lineage, calendars, and feature partitions |
+| Safety | Typed dry-run proposals require approval and idempotency keys; no executor | Typed tool permissions, stale-approval rejection, and audited execution |
+| Evaluation | Eight generic cases plus six market-data fixture cases | Recovery, latency, cost, and policy-violation suites |
 
 Do not describe planned items as completed work. Resume claims should be based only on reproducible tests and saved evaluation results.
 
@@ -107,15 +107,37 @@ The deterministic engine is intentional. It establishes testable evidence, citat
 - unit and API integration tests;
 - Docker packaging and a GitHub Actions test/evaluation gate.
 
+The market-data framework additionally implements:
+
+- `GET /api/market-data/fixtures`;
+- `POST /api/market-data/triage` for a stateless synthetic replay;
+- a versioned 3-symbol, 2-session daily-bar fixture;
+- deterministic injection of missing rows, duplicate rows, stale timestamps, incorrect adjustments, and schema drift;
+- typed `inspect_partition`, `check_trading_calendar`, and `lookup_corporate_actions` tools;
+- evidence-linked market-data hypotheses;
+- bounded dry-run recovery proposals with approval flags and idempotency keys;
+- a six-case market-data offline regression suite.
+
 Approval records are audit events only in the current version. There is no production action executor.
+Market-data triage is a framework demonstration over synthetic data, not a claim of production provider coverage or recovery capability.
 
 ## Repository layout
 
 ```text
 ops-pilot/
 ├── .github/workflows/ci.yml
-├── eval/cases.json
+├── eval/
+│   ├── cases.json
+│   └── market_data_cases.json
 ├── src/opspilot/
+│   ├── market_data/
+│   │   ├── data/us_equity_daily_bars_v1.json
+│   │   ├── domain.py
+│   │   ├── evaluation.py
+│   │   ├── faults.py
+│   │   ├── fixtures.py
+│   │   ├── tools.py
+│   │   └── triage.py
 │   ├── api.py
 │   ├── domain.py
 │   ├── evaluation.py
@@ -137,6 +159,7 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev]'
 .venv/bin/python -m pytest
 .venv/bin/python -m opspilot.evaluation eval/cases.json
+.venv/bin/python -m opspilot.market_data.evaluation eval/market_data_cases.json
 .venv/bin/python -m uvicorn opspilot.api:app --reload
 ```
 
@@ -162,6 +185,23 @@ curl -s http://127.0.0.1:8000/api/incidents \
 ```
 
 Pass the returned `incident_id` to the triage endpoint. The response contains a tool trace, an evidence packet, ranked hypotheses, next checks, and approval-required actions.
+
+Run a deterministic market-data fault replay:
+
+```bash
+curl -s http://127.0.0.1:8000/api/market-data/triage \
+  -H 'content-type: application/json' \
+  -d '{
+    "fixture_id": "us-equity-daily-bars-v1",
+    "faults": [{
+      "fault_type": "incorrect_adjustment",
+      "symbol": "BBB",
+      "session": "2025-01-03"
+    }]
+  }'
+```
+
+The endpoint injects only an allowlisted fixture fault, runs read-only diagnostic tools, and returns proposed dry runs. It never executes those proposals.
 
 ## Target market-data architecture
 
@@ -251,11 +291,13 @@ The initial fault suite should inject missing rows, duplicates, stale timestamps
 - Preserve the deterministic engine and eight-case regression suite.
 - Keep all tests green while introducing domain-specific types.
 
-### Phase 1 — Market-data incident model
+### Phase 1 — Market-data incident model (framework slice complete)
 
-- Add dataset, provider, symbol universe, session, partition, and quality-check types.
-- Build a small reproducible fixture dataset and fault injector.
-- Add calendar, corporate-action, and data-profile tools.
+- [x] Add dataset, provider, symbol universe, session, partition, and quality-check types.
+- [x] Build a small reproducible fixture dataset and five-fault injector.
+- [x] Add calendar, corporate-action, and data-profile tool boundaries.
+- [ ] Add provider throttling, partial-write, and out-of-order fault cases.
+- [ ] Replace the simplified fixture calendar/adjustment rules with versioned domain adapters.
 
 ### Phase 2 — Persistence and orchestration
 
@@ -298,11 +340,10 @@ Do not publish accuracy, latency, recovery, or productivity numbers until the co
 
 ## Starting point for the next development conversation
 
-Before adding an LLM or UI:
+Before adding an LLM or UI, turn the fixture framework into a persisted replay boundary:
 
-1. inspect the existing API, domain models, tests, and evaluation fixture;
-2. run the current test and evaluation suites;
-3. define the smallest market-data fixture and fault taxonomy;
-4. extend the deterministic evidence boundary first;
-5. record the baseline results before implementing model-assisted synthesis.
-
+1. define repository protocols for incidents, reports, evidence snapshots, and approvals;
+2. add PostgreSQL migrations and a local object-store abstraction;
+3. persist a submitted fixture replay and expose its immutable timeline;
+4. add retry/idempotency tests around a background triage job;
+5. save versioned evaluation result artifacts before making benchmark claims.

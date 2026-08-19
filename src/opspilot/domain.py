@@ -33,7 +33,14 @@ class Incident(IncidentCreate):
 
 class Evidence(BaseModel):
     evidence_id: str
-    source_type: Literal["log", "metric", "runbook"]
+    source_type: Literal[
+        "log",
+        "metric",
+        "runbook",
+        "data_profile",
+        "calendar",
+        "corporate_action",
+    ]
     source_ref: str
     excerpt: str = Field(min_length=1, max_length=500)
 
@@ -81,4 +88,3 @@ class ApprovalDecision(BaseModel):
 class ApprovalRecord(ApprovalDecision):
     incident_id: str
     recorded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-

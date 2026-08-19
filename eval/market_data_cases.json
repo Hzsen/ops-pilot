@@ -1,0 +1,50 @@
+[
+  {
+    "case_id": "clean-baseline",
+    "fixture_id": "us-equity-daily-bars-v1",
+    "faults": [],
+    "expected_tools": ["inspect_partition", "check_trading_calendar"],
+    "expected_hypothesis_contains": "no supported data-quality fault",
+    "expected_action_type": null
+  },
+  {
+    "case_id": "missing-row",
+    "fixture_id": "us-equity-daily-bars-v1",
+    "faults": [{"fault_type": "missing_row", "symbol": "AAA", "session": "2025-01-02"}],
+    "expected_tools": ["inspect_partition", "check_trading_calendar"],
+    "expected_hypothesis_contains": "partition is incomplete",
+    "expected_action_type": "dry_run_refetch"
+  },
+  {
+    "case_id": "duplicate-row",
+    "fixture_id": "us-equity-daily-bars-v1",
+    "faults": [{"fault_type": "duplicate_row", "symbol": "AAA", "session": "2025-01-03"}],
+    "expected_tools": ["inspect_partition", "check_trading_calendar"],
+    "expected_hypothesis_contains": "duplicate symbol/session",
+    "expected_action_type": "quarantine_partition"
+  },
+  {
+    "case_id": "stale-timestamp",
+    "fixture_id": "us-equity-daily-bars-v1",
+    "faults": [{"fault_type": "stale_timestamp", "symbol": "CCC", "session": "2025-01-03"}],
+    "expected_tools": ["inspect_partition", "check_trading_calendar"],
+    "expected_hypothesis_contains": "does not belong",
+    "expected_action_type": "quarantine_partition"
+  },
+  {
+    "case_id": "incorrect-adjustment",
+    "fixture_id": "us-equity-daily-bars-v1",
+    "faults": [{"fault_type": "incorrect_adjustment", "symbol": "BBB", "session": "2025-01-03"}],
+    "expected_tools": ["inspect_partition", "lookup_corporate_actions"],
+    "expected_hypothesis_contains": "inconsistent with the recorded adjustment factor",
+    "expected_action_type": "rebuild_adjustments"
+  },
+  {
+    "case_id": "schema-drift",
+    "fixture_id": "us-equity-daily-bars-v1",
+    "faults": [{"fault_type": "schema_drift", "symbol": "CCC", "session": "2025-01-02"}],
+    "expected_tools": ["inspect_partition", "check_trading_calendar"],
+    "expected_hypothesis_contains": "allowlisted daily-bar schema",
+    "expected_action_type": "quarantine_partition"
+  }
+]

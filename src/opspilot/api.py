@@ -12,6 +12,10 @@ from .domain import (
     IncidentCreate,
     TriageReport,
 )
+from .market_data.domain import MarketDataTriageRequest, MarketDataTriageReport
+from .market_data.faults import FaultInjectionError, FaultInjector
+from .market_data.fixtures import list_fixtures, load_fixture
+from .market_data.triage import MarketDataTriageEngine
 from .repository import IncidentNotFoundError, InMemoryIncidentRepository
 from .triage import TriageEngine
 
@@ -20,10 +24,27 @@ def create_app() -> FastAPI:
     application = FastAPI(title="OpsPilot", version="0.1.0")
     repository = InMemoryIncidentRepository()
     engine = TriageEngine()
+    fault_injector = FaultInjector()
+    market_data_engine = MarketDataTriageEngine()
 
     @application.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok", "policy": "human-approval-required"}
+
+    @application.get("/api/market-data/fixtures", response_model=list[dict[str, str]])
+    def get_market_data_fixtures() -> list[dict[str, str]]:
+        return list_fixtures()
+
+    @application.post(
+        "/api/market-data/triage", response_model=MarketDataTriageReport
+    )
+    def triage_market_data(payload: MarketDataTriageRequest) -> MarketDataTriageReport:
+        try:
+            fixture = load_fixture(payload.fixture_id)
+            batch = fault_injector.inject(fixture, payload.faults)
+        except (FaultInjectionError, ValueError) as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return market_data_engine.triage(batch)
 
     @application.post(
         "/api/incidents", response_model=Incident, status_code=status.HTTP_201_CREATED
@@ -75,4 +96,3 @@ def run() -> None:
 
 if __name__ == "__main__":
     run()
-

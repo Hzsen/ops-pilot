@@ -22,12 +22,15 @@ dev = [
 
 [project.scripts]
 opspilot-eval = "opspilot.evaluation:main"
+opspilot-market-eval = "opspilot.market_data.evaluation:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"opspilot.market_data" = ["data/*.json"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
 pythonpath = ["src"]
-

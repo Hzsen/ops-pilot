@@ -1,0 +1,21 @@
+{
+  "fixture_id": "us-equity-daily-bars-v1",
+  "version": "1.0.0",
+  "dataset": "synthetic_us_equity_daily_bars",
+  "provider": "fixture-provider",
+  "exchange": "XNYS",
+  "timezone": "America/New_York",
+  "expected_symbols": ["AAA", "BBB", "CCC"],
+  "sessions": ["2025-01-02", "2025-01-03"],
+  "rows": [
+    {"symbol": "AAA", "session": "2025-01-02", "timestamp": "2025-01-02T21:00:00Z", "open": 99.0, "high": 102.0, "low": 98.0, "close": 100.0, "adjusted_close": 100.0, "adjustment_factor": 1.0, "volume": 1000},
+    {"symbol": "AAA", "session": "2025-01-03", "timestamp": "2025-01-03T21:00:00Z", "open": 100.0, "high": 103.0, "low": 99.0, "close": 101.0, "adjusted_close": 101.0, "adjustment_factor": 1.0, "volume": 1100},
+    {"symbol": "BBB", "session": "2025-01-02", "timestamp": "2025-01-02T21:00:00Z", "open": 49.0, "high": 51.0, "low": 48.0, "close": 50.0, "adjusted_close": 50.0, "adjustment_factor": 1.0, "volume": 2000},
+    {"symbol": "BBB", "session": "2025-01-03", "timestamp": "2025-01-03T21:00:00Z", "open": 25.0, "high": 27.0, "low": 24.0, "close": 26.0, "adjusted_close": 13.0, "adjustment_factor": 0.5, "volume": 4200},
+    {"symbol": "CCC", "session": "2025-01-02", "timestamp": "2025-01-02T21:00:00Z", "open": 75.0, "high": 78.0, "low": 74.0, "close": 77.0, "adjusted_close": 77.0, "adjustment_factor": 1.0, "volume": 1500},
+    {"symbol": "CCC", "session": "2025-01-03", "timestamp": "2025-01-03T21:00:00Z", "open": 77.0, "high": 79.0, "low": 76.0, "close": 78.0, "adjusted_close": 78.0, "adjustment_factor": 1.0, "volume": 1600}
+  ],
+  "corporate_actions": [
+    {"symbol": "BBB", "ex_date": "2025-01-03", "action_type": "split", "split_ratio": 2.0, "expected_adjustment_factor": 0.5}
+  ]
+}
